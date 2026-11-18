@@ -45,6 +45,22 @@ def test_file_exists_and_schema_predicates():
         })
         assert res3.passed
 
+        # test_pass predicate without shell=True
+        res4 = evaluator.evaluate({
+            "predicate_id": "P4",
+            "kind": "test_pass",
+            "expression": "python3 -c \"import sys; sys.exit(0)\""
+        })
+        assert res4.passed
+
+        # test_pass failure
+        res5 = evaluator.evaluate({
+            "predicate_id": "P5",
+            "kind": "test_pass",
+            "expression": "python3 -c \"import sys; sys.exit(1)\""
+        })
+        assert not res5.passed
+
 
 def test_convergence_engine_pass():
     with tempfile.TemporaryDirectory() as tmpdir:

@@ -107,13 +107,31 @@ def test_sec_attack_context_pack_tampering_and_role_view(disposable_repo_and_con
     ctrl = SliceRunController(repo_dir, control_dir, configured_adapter_id="dummy")
     ctrl.open_run("S6")
 
-    # M2 requirement: verify worker context pack digest
+    # M2 requirement: verify worker context pack digest fails on invalid/tampered digest
     res = ctrl.dispatch_manager.verify_worker_context_pack_digest(
         pack_id="cp-123",
         claimed_digest="0" * 64,
         actual_content={"role": "IMPLEMENTER"}
     )
     assert res is False
+
+    # Positive verification: genuine generated context pack must pass verification
+    pack = ctrl.dispatch_manager.generate_context_pack("PLANNER", "run-1")
+    valid_digest = pack["context_pack_digest"]
+    assert ctrl.dispatch_manager.verify_worker_context_pack_digest(
+        pack_id=pack["context_pack_id"],
+        claimed_digest=valid_digest,
+        actual_content=pack,
+    ) is True
+
+    # Tampered content must fail
+    tampered_pack = dict(pack)
+    tampered_pack["tampered_key"] = "malicious"
+    assert ctrl.dispatch_manager.verify_worker_context_pack_digest(
+        pack_id=pack["context_pack_id"],
+        claimed_digest=valid_digest,
+        actual_content=tampered_pack,
+    ) is False
 
 
 # ==============================================================================
