@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import re
+import shlex
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -128,9 +129,10 @@ class PredicateEvaluator:
             return PredicateResult(passed=False, predicate_id=predicate_id, kind="test_pass", message="Empty test command expression")
 
         try:
+            cmd_args = shlex.split(cmd_str)
             res = subprocess.run(
-                cmd_str,
-                shell=True,
+                cmd_args,
+                shell=False,
                 cwd=self.workspace_dir,
                 capture_output=True,
                 text=True,

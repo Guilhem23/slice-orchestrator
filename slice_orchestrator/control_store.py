@@ -61,25 +61,35 @@ class SliceLockManager:
         self.blocking = blocking
 
     def acquire(self) -> None:
-        import fcntl
+        try:
+            import fcntl
+        except ImportError:
+            fcntl = None
         self.lock_path.parent.mkdir(parents=True, exist_ok=True)
         self.lock_file = open(self.lock_path, "w")
-        flags = fcntl.LOCK_EX if self.blocking else (fcntl.LOCK_EX | fcntl.LOCK_NB)
-        try:
-            fcntl.flock(self.lock_file.fileno(), flags)
+        if fcntl is not None:
+            flags = fcntl.LOCK_EX if self.blocking else (fcntl.LOCK_EX | fcntl.LOCK_NB)
+            try:
+                fcntl.flock(self.lock_file.fileno(), flags)
+                self.lock_file.write(f"locked-{os.getpid()}\n")
+                self.lock_file.flush()
+            except BlockingIOError:
+                self.lock_file.close()
+                self.lock_file = None
+                raise RuntimeError(f"Slice lock already held: {self.lock_path}")
+        else:
             self.lock_file.write(f"locked-{os.getpid()}\n")
             self.lock_file.flush()
-        except BlockingIOError:
-            self.lock_file.close()
-            self.lock_file = None
-            raise RuntimeError(f"Slice lock already held: {self.lock_path}")
 
     def release(self) -> None:
         if self.lock_file:
-            import fcntl
             try:
-                fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_UN)
-            except Exception:
+                import fcntl
+                try:
+                    fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_UN)
+                except Exception:
+                    pass
+            except ImportError:
                 pass
             self.lock_file.close()
             self.lock_file = None

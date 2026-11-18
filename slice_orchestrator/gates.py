@@ -166,7 +166,8 @@ def execute_control_test(test_def: dict[str, Any], repo_dir: Path) -> TestExecut
         passed = False
     except subprocess.TimeoutExpired as exc:
         stdout_text = exc.stdout if isinstance(exc.stdout, str) else (exc.stdout.decode("utf-8") if exc.stdout else "")
-        stderr_text = f"TIMEOUT: Test execution timed out after {timeout_sec}s. {exc.stderr or ''}"
+        stderr_decoded = exc.stderr if isinstance(exc.stderr, str) else (exc.stderr.decode("utf-8") if exc.stderr else "")
+        stderr_text = f"TIMEOUT: Test execution timed out after {timeout_sec}s. {stderr_decoded}"
         exit_code = 124
         passed = False
     except Exception as exc:

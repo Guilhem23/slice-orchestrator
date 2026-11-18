@@ -6,6 +6,7 @@ WorkerInputBundle construction, and M1 event integration in accordance with ADR-
 
 from datetime import datetime, timezone
 import hashlib
+import hmac
 import json
 from pathlib import Path
 import uuid
